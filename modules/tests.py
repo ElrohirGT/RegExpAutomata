@@ -4,6 +4,7 @@ from regexpToAFN import toAFN, newAFN
 
 # All tests will be added to this file!
 
+
 class TestShuntingYard(unittest.TestCase):
     def test_basic_example(self):
         infix = "ab"
@@ -17,13 +18,13 @@ class TestShuntingYard(unittest.TestCase):
         actual = toPostFix(infix)
         self.assertEqual(actual, expected)
 
+
 class TestRegexToAFN(unittest.TestCase):
     def test_basic_regexp(self):
         postfix = "ab."
         expected = newAFN([{"a": [1]}, {"_": [2]}, {"b": [3]}, {}], 3)
         actual = toAFN(postfix)
         self.assertEqual(actual, expected)
-
 
     def test_class_example(self):
         postfix = "a*_+b"
@@ -42,6 +43,7 @@ class TestRegexToAFN(unittest.TestCase):
         actual = toAFN(postfix)
         self.assertEqual(actual, expected)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # print(toPostFix)
     unittest.main()
