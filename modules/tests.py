@@ -26,6 +26,14 @@ class TestRegexToAFN(unittest.TestCase):
         actual = toAFN(postfix)
         self.assertEqual(actual, expected)
 
+    def test_or_regexp(self):
+        postfix = "ab+"
+        expected = newAFN(
+            [{"_": [1, 4]}, {"a": [2]}, {"_": 3}, {}, {"b": [5]}, {"_": 3}], 3
+        )
+        actual = toAFN(postfix)
+        self.assertEqual(actual, expected)
+
     def test_class_example(self):
         postfix = "a*_+b"
         expected = """0 _ 1
