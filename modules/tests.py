@@ -14,7 +14,7 @@ class TestShuntingYard(unittest.TestCase):
 
     def test_class_example(self):
         infix = "_+a*b"
-        expected = "a*_+b"
+        expected = "a*_+b."
         actual = toPostFix(infix)
         self.assertEqual(actual, expected)
 
