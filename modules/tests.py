@@ -1,13 +1,13 @@
 import unittest
 from shunYard import toPostFix
-from regexpToAFN import toAFN
+from regexpToAFN import toAFN, newAFN
 
 # All tests will be added to this file!
 
 class TestShuntingYard(unittest.TestCase):
     def test_basic_example(self):
-        infix = "a+b"
-        expected = "ab+"
+        infix = "ab"
+        expected = "ab."
         actual = toPostFix(infix)
         self.assertEqual(actual, expected)
 
@@ -19,13 +19,11 @@ class TestShuntingYard(unittest.TestCase):
 
 class TestRegexToAFN(unittest.TestCase):
     def test_basic_regexp(self):
-        postfix = "ab+"
-        expected = """0 a 1
-0 b 1
----
-1"""
+        postfix = "ab."
+        expected = newAFN([{"a": [1]}, {"_": [2]}, {"b": [3]}, {}], 3)
         actual = toAFN(postfix)
         self.assertEqual(actual, expected)
+
 
     def test_class_example(self):
         postfix = "a*_+b"
