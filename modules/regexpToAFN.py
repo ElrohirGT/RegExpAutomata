@@ -45,7 +45,20 @@ def toAFN(postfix: str):
                 afn["transitions"] += mappedAFN1Transitions
                 stack.append(afn)
 
-            # case '*': # 0 or more
+            case "*":  # 0 or more
+                received = stack.pop()
+
+                afn = newAFN([{"_": [1, 2]}, {}], 1)
+                afnLength = len(afn["transitions"])
+                mappedReceivedTransitions = displaceTransitions(received, afnLength)
+
+                receivedAccepted = received["accepted"]
+                initializeOrAppend(mappedReceivedTransitions[receivedAccepted], "_", 1)
+                mappedReceivedTransitions[receivedAccepted]["_"].append(2)
+
+                afn["transitions"] += mappedReceivedTransitions
+                stack.append(afn)
+
             case _:
                 stack.append(newAFN([{char: [1]}, {}], 1))
     return stack.pop()
