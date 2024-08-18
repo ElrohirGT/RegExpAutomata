@@ -87,5 +87,6 @@ def newAFN(transitions: list, accepted: int):
     }
 
 
-exampleAFN = toAFN("a*b._+")
-print(exampleAFN)
+if __name__ == "__main__":
+    exampleAFN = toAFN("a*b._+")
+    print(exampleAFN)

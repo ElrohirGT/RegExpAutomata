@@ -41,7 +41,7 @@ class TestRegexToAFN(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_and_or_regexp(self):
-        postfix = "a*b._+"
+        postfix = "ab.a+"
         expected = newAFN(
             [
                 {"_": [2, 6]},
@@ -59,7 +59,8 @@ class TestRegexToAFN(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_class_example(self):
-        postfix = "a*_+b."
+        self.maxDiff = None
+        postfix = "a*b._+"
         expected = newAFN(
             [
                 {"_": [2, 8]},
@@ -80,5 +81,4 @@ class TestRegexToAFN(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # print(toPostFix)
     unittest.main()
