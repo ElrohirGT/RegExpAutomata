@@ -87,8 +87,5 @@ def newAFN(transitions: list, accepted: int):
     }
 
 
-# exampleAFN = {
-#         'transitions': [{'_': [1,2]}, {'a':[3]}, {'b': [4]}, {'_': [5]}, {'_': [5]}, {}],
-#         'accepted': 5
-#         }
-# print(exampleAFN)
+exampleAFN = toAFN("a*b._+")
+print(exampleAFN)

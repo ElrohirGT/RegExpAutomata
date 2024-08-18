@@ -14,7 +14,7 @@ class TestShuntingYard(unittest.TestCase):
 
     def test_class_example(self):
         infix = "_+a*b"
-        expected = "a*_+b."
+        expected = "a*b._+"
         actual = toPostFix(infix)
         self.assertEqual(actual, expected)
 
@@ -41,7 +41,7 @@ class TestRegexToAFN(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_and_or_regexp(self):
-        postfix = "ab.a+"
+        postfix = "a*b._+"
         expected = newAFN(
             [
                 {"_": [2, 6]},
@@ -60,7 +60,21 @@ class TestRegexToAFN(unittest.TestCase):
 
     def test_class_example(self):
         postfix = "a*_+b."
-        expected = []
+        expected = newAFN(
+            [
+                {"_": [2, 8]},
+                {},
+                {"_": [3, 4]},
+                {"_": [6]},
+                {"a": [5]},
+                {"_": [3, 4]},
+                {"b": [7]},
+                {"_": [1]},
+                {"_": [9]},
+                {"_": [1]},
+            ],
+            1,
+        )
         actual = toAFN(postfix)
         self.assertEqual(actual, expected)
 
