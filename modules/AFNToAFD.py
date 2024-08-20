@@ -1,17 +1,18 @@
 from regexpToAFN import toAFN
 from pprint import pp
 
-type AFDTransitions = dict[frozenset[int], dict[str, frozenset[int]]]
+type AFDState = frozenset[int]
+type AFDTransitions = dict[AFDState, dict[str, AFDState]]
 
 
-def fromAFNToAFD(originalAFN):
+def fromAFNToAFD(afn):
     afdTransitions: AFDTransitions = {}
-    closure, inputs = findClosure(afn, 0, set)
+    closure, inputs = findClosure(afn, 0, set(()))
     travelAFN(afn, frozenset(closure), frozenset(inputs), afdTransitions)
 
     accepted = []
     for state in afdTransitions:
-        if originalAFN["accepted"] in state:
+        if afn["accepted"] in state:
             accepted.append(state)
 
     return newAFD(afdTransitions, accepted)
@@ -76,26 +77,21 @@ def initializeOrAppend():
     pass
 
 
-def newAFD(transitions: AFDTransitions, accepted: list[frozenset]):
+def newAFD(transitions: AFDTransitions, accepted: list[AFDState]):
+    """
+    Constructs a new AFD given the transistions and it's accepted states.
+    """
     return {"transitions": transitions, "accepted": accepted}
 
 
 if __name__ == "__main__":
-    exampleAFD = {"transitions": {"0": {"a": "0"}}, "starting": "0", "accepted": [1]}
-    print(exampleAFD)
+    postfix = "a*"
+    print("RegExp:", postfix)
 
-    postfix = "a*b._+"
     afn = toAFN(postfix)
     print("AFN ")
     pp(afn)
 
-    closure, inputs = findClosure(afn, 0, set(()))
-    print("Closure ")
-    pp(closure)
-    print("Inputs")
-    pp(inputs)
-
-    afdTransitions = {}
-    travelAFN(afn, frozenset(closure), frozenset(inputs), afdTransitions)
-    print("Traveled")
-    pp(afdTransitions)
+    afd = fromAFNToAFD(afn)
+    print("AFD")
+    pp(afd)
