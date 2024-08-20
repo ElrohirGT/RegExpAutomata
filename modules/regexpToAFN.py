@@ -1,4 +1,5 @@
-type AFNTransitions = list[dict[str, list]]
+type AFNTransitions = list[dict[str, list[AFNState]]]
+type AFNState = int
 
 
 def toAFN(postfix: str):
@@ -83,7 +84,7 @@ def displaceTransitions(afn, delta: int):
     ]
 
 
-def newAFN(transitions: AFNTransitions, accepted: int):
+def newAFN(transitions: AFNTransitions, accepted: AFNState):
     return {
         "transitions": transitions,
         "accepted": accepted,
