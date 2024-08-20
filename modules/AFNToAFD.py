@@ -14,7 +14,7 @@ def fromAFNToAFD(originalAFN):
         if originalAFN["accepted"] in state:
             accepted.append(state)
 
-    newAFD(afdTransitions, accepted)
+    return newAFD(afdTransitions, accepted)
 
 
 def travelAFN(
