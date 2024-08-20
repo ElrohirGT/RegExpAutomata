@@ -1,6 +1,7 @@
 import unittest
 from shunYard import toPostFix
 from regexpToAFN import toAFN, newAFN
+from AFNToAFD import fromAFNToAFD
 
 # All tests will be added to this file!
 
@@ -77,6 +78,67 @@ class TestRegexToAFN(unittest.TestCase):
             1,
         )
         actual = toAFN(postfix)
+        self.assertEqual(actual, expected)
+
+
+class TestAFNToAFD(unittest.TestCase):
+    def test_and_or_regexp(self):
+        afn = newAFN(
+            [
+                {"_": [2, 6]},
+                {},
+                {"a": [3]},
+                {"_": [4]},
+                {"b": [5]},
+                {"_": [1]},
+                {"a": [7]},
+                {"_": [1]},
+            ],
+            1,
+        )
+        expected = {
+            "accepted": [frozenset({1, 3, 4, 7}), frozenset({1, 5})],
+            "transitions": {
+                frozenset({0, 2, 6}): {"a": frozenset({1, 3, 4, 7})},
+                frozenset({1, 3, 4, 7}): {"b": frozenset({1, 5})},
+                frozenset({1, 5}): {},
+            },
+        }
+        actual = fromAFNToAFD(afn)
+        self.assertEqual(actual, expected)
+
+    def test_class_example(self):
+        self.maxDiff = None
+        afn = newAFN(
+            [
+                {"_": [2, 8]},
+                {},
+                {"_": [3, 4]},
+                {"_": [6]},
+                {"a": [5]},
+                {"_": [3, 4]},
+                {"b": [7]},
+                {"_": [1]},
+                {"_": [9]},
+                {"_": [1]},
+            ],
+            1,
+        )
+        actual = fromAFNToAFD(afn)
+        expected = {
+            "accepted": [frozenset({0, 1, 2, 3, 4, 6, 8, 9}), frozenset({1, 7})],
+            "transitions": {
+                frozenset({0, 1, 2, 3, 4, 6, 8, 9}): {
+                    "a": frozenset({3, 4, 5, 6}),
+                    "b": frozenset({1, 7}),
+                },
+                frozenset({3, 4, 5, 6}): {
+                    "a": frozenset({3, 4, 5, 6}),
+                    "b": frozenset({1, 7}),
+                },
+                frozenset({1, 7}): {},
+            },
+        }
         self.assertEqual(actual, expected)
 
 
