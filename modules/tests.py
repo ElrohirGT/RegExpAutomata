@@ -15,9 +15,33 @@ class TestShuntingYard(unittest.TestCase):
 
     def test_class_example(self):
         infix = "_+a*b"
-        expected = "a*b._+"
+        expected = "_a*b.+"
         actual = toPostFix(infix)
         self.assertEqual(actual, expected)
+
+    def test_class_example(self):
+        infix = "(0+1)*11(0+1)*"
+        expected = "01+*1.1.01+*."
+        actual = toPostFix(infix)
+        self.assertEqual(actual, expected)
+
+    def test_class_example(self):
+        infix = "a(a+ab*)*"
+        expected = "aaab*.+*."
+        actual = toPostFix(infix)
+        self.assertEqual(actual, expected) 
+
+    def test_class_example(self):
+        infix = "a*b*c*"
+        expected = "a*b*.c*."
+        actual = toPostFix(infix)
+        self.assertEqual(actual, expected)
+    
+    def test_class_example(self):
+        infix = "0(0+1+2)*2"
+        expected = "001+2+*.2."
+        actual = toPostFix(infix)
+        self.assertEqual(actual, expected)  
 
 
 class TestRegexToAFN(unittest.TestCase):
