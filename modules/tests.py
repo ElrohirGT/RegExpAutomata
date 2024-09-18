@@ -1,4 +1,5 @@
 import unittest
+from minimizeAFD import minimize_afd
 from shunYard import toPostFix
 from regexpToAFN import toAFN, newAFN
 from AFNToAFD import fromAFNToAFD
@@ -164,6 +165,26 @@ class TestAFNToAFD(unittest.TestCase):
             },
         }
         self.assertEqual(actual, expected)
+
+class TestMinimizeAFD(unittest.TestCase):
+    def test_minimize_basic(self):
+        afn = {
+            "transitions": {
+                frozenset({0, 1, 2}): {"0": frozenset({1, 2, 3})},
+                frozenset({1, 2, 3}): {"0": frozenset({1, 2, 3})}
+            },
+            "accepted": [frozenset({0, 1, 2}), frozenset({1, 2, 3})]
+        }
+        minimized_afd = minimize_afd(afn)
+        expected = {
+            "transitions": {
+                frozenset({frozenset({0, 1, 2}), frozenset({1, 2, 3})}): {
+                    "0": frozenset({frozenset({0, 1, 2}), frozenset({1, 2, 3})})
+                }
+            },
+            "accepted": [frozenset({frozenset({0, 1, 2}), frozenset({1, 2, 3})})]
+        }
+        self.assertEqual(minimized_afd, expected)
 
 
 if __name__ == "__main__":
