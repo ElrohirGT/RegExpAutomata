@@ -1,11 +1,18 @@
 # minimizeAFD.py
 
 def minimize_afd(afd):
+    # Separar los estados de aceptación y los no aceptados
+    accepted_states = set(afd['accepted'])
+    non_accepted_states = set(afd['transitions'].keys()) - accepted_states
+
     grouped = {}
     
     # Agrupar los estados del AFD con las mismas transiciones
     for state, transitions in afd['transitions'].items():
-        key = frozenset(transitions.items())  # Usar las transiciones como clave
+        # Crear la clave en función de las transiciones y si el estado es de aceptación o no
+        is_accepted = state in accepted_states
+        key = (frozenset(transitions.items()), is_accepted)  # Transiciones y si es estado aceptado
+
         grouped.setdefault(key, []).append(state)
 
     minimized_transitions = {}
@@ -24,7 +31,8 @@ def minimize_afd(afd):
                     minimized_transitions[representative][input_char] = next_representative
                     break
 
-        if any(state in afd['accepted'] for state in group):
+        # Si alguno de los estados del grupo es aceptado, todo el grupo es aceptado
+        if any(state in accepted_states for state in group):
             minimized_accepted.add(representative)
 
     return {

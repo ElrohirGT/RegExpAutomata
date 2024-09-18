@@ -84,63 +84,80 @@ def write_automaton_to_json(automaton, filename):
     print(f"{Fore.YELLOW}Automaton written to {filename}")
 
 def simulate_regexp_process(infix_expression, test_string):
+    # Sanitizar nombre de la carpeta usando la expresión regular
     sanitized_infix = sanitize_folder_name(infix_expression)
     folder = f"automaton_graphs/{sanitized_infix}"
 
+    # Crear la carpeta específica para esta expresión si no existe
     os.makedirs(folder, exist_ok=True)
 
+    # Paso 1: Convertir infix a postfix
     postfix = toPostFix(infix_expression)
-    print(f"{Fore.CYAN}Postfix: {postfix}")
+    print(f"Postfix: {postfix}")
 
+    # Paso 2: Convertir postfix a AFN
     afn = toAFN(postfix)
-    print(f"{Fore.CYAN}AFN: {afn}")
+    print(f"AFN: {afn}")
     generate_graph(afn, "AFN", folder)
     write_automaton_to_json(afn, os.path.join(folder, "afn.json"))
 
+    # Paso 3: Convertir AFN a AFD
     afd = fromAFNToAFD(afn)
-    print(f"{Fore.BLUE}AFD Transitions:")
+    print(f"AFD Transitions:")
     for state, transitions in afd['transitions'].items():
-        print(f"State: {Fore.YELLOW}{state} -> Transitions: {transitions}")
-    print(f"{Fore.BLUE}AFD Accepted States: {afd['accepted']}")
+        print(f"State: {state} -> Transitions: {transitions}")
+    print(f"AFD Accepted States: {afd['accepted']}")
     generate_graph(afd, "AFD", folder)
     write_automaton_to_json(afd, os.path.join(folder, "afd.json"))
 
+    # Paso 4: Minimizar AFD
     minimized_afd = minimize_afd(afd)
-    print(f"{Fore.MAGENTA}Minimized AFD Transitions:")
+    print(f"Minimized AFD Transitions:")
     for state, transitions in minimized_afd['transitions'].items():
-        print(f"State: {Fore.YELLOW}{state} -> Transitions: {transitions}")
-    print(f"{Fore.MAGENTA}Minimized AFD Accepted States: {minimized_afd['accepted']}")
+        print(f"State: {state} -> Transitions: {transitions}")
+    print(f"Minimized AFD Accepted States: {minimized_afd['accepted']}")
     generate_graph(minimized_afd, "Minimized_AFD", folder)
     write_automaton_to_json(minimized_afd, os.path.join(folder, "minimized_afd.json"))
 
-    current_state = next(iter(minimized_afd['transitions'].keys()))
-    print(f"{Fore.GREEN}Initial state: {current_state}")
+    # Paso 5: Simular la cadena de entrada
+    current_state = next(iter(minimized_afd['transitions'].keys()))  # Estado inicial
+    print(f"Initial state: {current_state}")
 
-    start_time = time.time()
+    if not test_string:
+        # Aquí se cambia la lógica para no aceptar la cadena vacía por defecto.
+        print(f"String is empty, checking if the initial state is an accepting state.")
+        if current_state in minimized_afd['accepted']:
+            print(f"String '{test_string}' is accepted because the initial state is an accepting state.")
+        else:
+            print(f"String '{test_string}' is not accepted because the initial state is not an accepting state.")
+        return
+
+    start_time = time.time()  # Comienza a medir el tiempo
 
     for char in test_string:
-        print(f"{Fore.CYAN}Processing character: {char}")
+        print(f"Processing character: {char}")
         if char in minimized_afd['transitions'][current_state]:
             next_state = minimized_afd['transitions'][current_state][char]
-            print(f"Transition from {Fore.YELLOW}{current_state} to {Fore.YELLOW}{next_state} on '{char}'")
+            print(f"Transition from {current_state} to {next_state} on '{char}'")
             current_state = next_state
         else:
-            print(f"{Fore.RED}No transition from {current_state} on '{char}'")
-            print(f"{Fore.RED}String '{test_string}' is not accepted.")
-            end_time = time.time()
+            print(f"No transition from {current_state} on '{char}'")
+            print(f"String '{test_string}' is not accepted.")
+            end_time = time.time()  # Finaliza el tiempo de verificación
             elapsed_time = end_time - start_time
-            print(f"{Fore.RED}Verification time: {elapsed_time} seconds")
+            print(f"Verification time: {elapsed_time} seconds")
             return False
 
+    # Verificar si el estado final es un estado aceptado
     if current_state in minimized_afd['accepted']:
-        print(f"{Fore.GREEN}String '{test_string}' is accepted.")
+        print(f"String '{test_string}' is accepted.")
     else:
-        print(f"{Fore.RED}Final state: {current_state} is not an accepted state.")
-        print(f"{Fore.RED}String '{test_string}' is not accepted.")
+        print(f"Final state: {current_state} is not an accepted state.")
+        print(f"String '{test_string}' is not accepted.")
 
-    end_time = time.time()
+    end_time = time.time()  # Finaliza el tiempo de verificación
     elapsed_time = end_time - start_time
-    print(f"{Fore.YELLOW}Verification time: {elapsed_time} seconds")
+    print(f"Verification time: {elapsed_time} seconds")
 
 if __name__ == "__main__":
     infix_expr = input("Ingrese la expresión regular en infix: ")
