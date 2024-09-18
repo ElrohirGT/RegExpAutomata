@@ -50,27 +50,28 @@ def travelAFN(
 
 def findClosure(afn: dict, stateIdx: int, alreadyEvaluated: set) -> tuple[set, set]:
     """
-    Finds the closure of a given state in the provided AFN.
+    Encuentra el cierre de un estado en el AFN.
 
-    Returns all the states within the closure and the set of valid inputs for the closure.
+    Retorna un conjunto de todos los estados dentro del cierre y el conjunto de entradas válidas para ese cierre.
     """
 
     if stateIdx in alreadyEvaluated:
-        return ([], set(()))
+        return (set(), set())  # Cambiado de listas vacías a conjuntos vacíos
 
     alreadyEvaluated.add(stateIdx)
 
     original = afn["transitions"][stateIdx]
-    closure = set([stateIdx])
-    inputs = set(original.keys())
+    closure = set([stateIdx])  # Usamos un conjunto para el cierre
+    inputs = set(original.keys())  # Usamos un conjunto para las entradas
 
     if "_" in original:
         for state in original["_"]:
             foundClosure, foundInputs = findClosure(afn, state, alreadyEvaluated)
-            closure |= foundClosure
-            inputs |= foundInputs
+            closure |= set(foundClosure)  # Convertimos a conjunto si es necesario
+            inputs |= set(foundInputs)
 
     return (closure, inputs)
+
 
 
 def initializeOrAppend():
