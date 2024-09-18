@@ -5,104 +5,160 @@ from shunYard import toPostFix
 from regexpToAFN import toAFN
 from AFNToAFD import fromAFNToAFD
 from minimizeAFD import minimize_afd
+import graphviz
 
-# Función para simular la aceptación de la cadena en el AFD minimizado
-def simulate_afd(afd, w):
-    current_state = frozenset([0])  # Estado inicial
-    transitions = afd['transitions']
-    acceptance_states = afd['accepted']
-    path = []  # Almacena las transiciones realizadas
-    
-    for symbol in w:
-        if symbol not in transitions[current_state]:
-            return False, path  # Si el símbolo no está en las transiciones, rechazar
-        path.append((current_state, symbol, transitions[current_state][symbol]))
-        current_state = transitions[current_state][symbol]
-    
-    return current_state in acceptance_states, path
+def sanitize_folder_name(name):
+    # Reemplazar caracteres especiales para crear nombres de carpeta válidos
+    return ''.join(c if c.isalnum() else '_' for c in name)
 
-# Función para guardar autómatas en archivos .json, convirtiendo claves y valores frozenset a cadenas o listas
-def save_automaton(automaton, filename):
-    def frozenset_to_string(d):
-        if isinstance(d, dict):
-            return {str(k): frozenset_to_string(v) for k, v in d.items()}
-        elif isinstance(d, list):
-            return [frozenset_to_string(i) for i in d]
-        elif isinstance(d, frozenset):
-            return list(d)  # Convertimos frozenset a lista
-        return d
+def generate_graph(automaton, name, folder):
+    dot = graphviz.Digraph(comment=name)
 
-    # Convertimos el autómata, especialmente las claves y valores que son frozensets
-    automaton_str_keys = frozenset_to_string(automaton)
+    if isinstance(automaton['transitions'], list):  # Para AFN (lista de transiciones)
+        for state_idx, transitions in enumerate(automaton['transitions']):
+            state_label = str(state_idx)
+            for input_char, next_states in transitions.items():
+                for next_state in next_states:
+                    next_state_label = str(next_state)
+                    dot.edge(state_label, next_state_label, label=input_char)
+    else:  # Para AFD o AFD minimizado (diccionario de transiciones)
+        for state, transitions in automaton['transitions'].items():
+            state_label = ",".join(map(str, state))
+            for input_char, next_state in transitions.items():
+                next_state_label = ",".join(map(str, next_state))
+                dot.edge(state_label, next_state_label, label=input_char)
 
-    with open(filename, 'w') as f:
-        json.dump(automaton_str_keys, f, indent=4)
+    # Asegurarse de que los estados aceptados sean tratables como una colección
+    accepted_states = automaton['accepted'] if isinstance(automaton['accepted'], (list, set)) else [automaton['accepted']]
 
+    for accepted_state in accepted_states:
+        accepted_label = ",".join(map(str, accepted_state)) if isinstance(accepted_state, frozenset) else str(accepted_state)
+        dot.node(accepted_label, shape='doublecircle')
 
+    # Guardar el archivo
+    output_path = os.path.join(folder, f"{name}.gv")
+    dot.render(output_path, format="png")
+    print(f"Generated {name} graph at {output_path}.png")
 
-# Función para crear la carpeta donde se almacenarán los archivos
-def create_directory(name):
-    directory = f"./{name.replace('*', 'KLEENE').replace('|', 'OR').replace('.', 'CONCAT')}"  # Evitar caracteres problemáticos
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    return directory
+def write_automaton_to_json(automaton, filename):
+    # Verificar si el automaton es un AFN (lista) o AFD/AFD minimizado (diccionario)
+    if isinstance(automaton['transitions'], list):
+        estados = list(range(len(automaton['transitions'])))
+        transiciones = set()
+        simbolos = set()
 
-# Función principal de simulación
-def main():
-    # 1. Entrada del usuario
-    regexp = input("Ingresa la expresión regular: ")
-    w = input("Ingresa la cadena de prueba: ")
+        # Recorrer las transiciones del AFN (lista)
+        for state_idx, transitions in enumerate(automaton['transitions']):
+            for simbolo, next_states in transitions.items():
+                simbolos.add(simbolo)
+                for next_state in next_states:
+                    transiciones.add((state_idx, simbolo, next_state))
 
-    # 2. Convertir la expresión regular a postfix
-    postfix = toPostFix(regexp)
-    print(f"Expresión Postfija: {postfix}")
+        # En el caso del AFN, los estados son enteros
+        automaton_data = {
+            "ESTADOS": estados,
+            "SIMBOLOS": list(simbolos),
+            "INICIO": [estados[0]],  # Primer estado como inicial
+            "ACEPTACION": [automaton['accepted']],
+            "TRANSICIONES": [(origen, simbolo, destino) for (origen, simbolo, destino) in transiciones]
+        }
 
-    # 3. Crear el AFN desde la expresión postfija
-    afn = toAFN(postfix)
-    print(f"AFN generado.")
-
-    # 4. Crear el AFD a partir del AFN
-    afd = fromAFNToAFD(afn)
-    print(f"AFD generado.")
-
-    # 5. Minimizar el AFD
-    minimized_afd = minimize_afd(afd)
-    print(f"AFD minimizado.")
-
-    # 6. Crear la carpeta para almacenar los autómatas
-    folder_name = create_directory(regexp)
-
-    # 7. Guardar los autómatas en formato .json
-    save_automaton(afn, os.path.join(folder_name, 'AFN.json'))
-    save_automaton(afd, os.path.join(folder_name, 'AFD.json'))
-    save_automaton(minimized_afd, os.path.join(folder_name, 'AFD_minimizado.json'))
-
-    # 8. Simular la aceptación de la cadena en el AFD minimizado
-    start_time = time.time()
-    is_accepted, transitions_made = simulate_afd(minimized_afd, w)
-    end_time = time.time()
-
-    # 9. Tiempo de simulación
-    simulation_time = end_time - start_time
-
-    # 10. Mostrar el resultado de la simulación
-    if is_accepted:
-        print(f"La cadena '{w}' es aceptada por el autómata.")
     else:
-        print(f"La cadena '{w}' NO es aceptada por el autómata.")
-    
-    print(f"Tiempo de simulación: {simulation_time:.6f} segundos")
-    print(f"Transiciones realizadas: {transitions_made}")
+        estados = list(automaton['transitions'].keys())
+        transiciones = set()
+        simbolos = set()
 
-    # 11. Guardar el resultado de la simulación y las transiciones en un archivo .json
-    result = {
-        "cadena": w,
-        "resultado": "ACEPTADA" if is_accepted else "RECHAZADA",
-        "tiempo": simulation_time,
-        "transiciones": transitions_made
-    }
-    with open(os.path.join(folder_name, 'resultado.json'), 'w') as f:
-        json.dump(result, f, indent=4)
+        # Recorrer las transiciones del AFD/AFD minimizado (diccionario)
+        for origen, transitions in automaton['transitions'].items():
+            for simbolo, destino in transitions.items():
+                simbolos.add(simbolo)
+                transiciones.add((tuple(origen), simbolo, tuple(destino)))
 
+        # En el caso del AFD/AFD minimizado, los estados son conjuntos (frozenset)
+        automaton_data = {
+            "ESTADOS": [list(state) for state in estados],
+            "SIMBOLOS": list(simbolos),
+            "INICIO": [list(next(iter(estados)))],  # Primer estado como inicial
+            "ACEPTACION": [list(state) for state in automaton['accepted']],
+            "TRANSICIONES": [(list(origen), simbolo, list(destino)) for (origen, simbolo, destino) in transiciones]
+        }
+
+    # Escribir a un archivo JSON
+    with open(filename, 'w') as file:
+        json.dump(automaton_data, file, indent=4)
+
+    print(f"Automaton written to {filename}")
+
+def simulate_regexp_process(infix_expression, test_string):
+    # Sanitizar nombre de la carpeta usando la expresión regular
+    sanitized_infix = sanitize_folder_name(infix_expression)
+    folder = f"automaton_graphs/{sanitized_infix}"
+
+    # Crear la carpeta específica para esta expresión si no existe
+    os.makedirs(folder, exist_ok=True)
+
+    # Paso 1: Convertir infix a postfix
+    postfix = toPostFix(infix_expression)
+    print(f"Postfix: {postfix}")
+
+    # Paso 2: Convertir postfix a AFN
+    afn = toAFN(postfix)
+    print(f"AFN: {afn}")
+    generate_graph(afn, "AFN", folder)
+    write_automaton_to_json(afn, os.path.join(folder, "afn.json"))
+
+    # Paso 3: Convertir AFN a AFD
+    afd = fromAFNToAFD(afn)
+    print(f"AFD Transitions:")
+    for state, transitions in afd['transitions'].items():
+        print(f"State: {state} -> Transitions: {transitions}")
+    print(f"AFD Accepted States: {afd['accepted']}")
+    generate_graph(afd, "AFD", folder)
+    write_automaton_to_json(afd, os.path.join(folder, "afd.json"))
+
+    # Paso 4: Minimizar AFD
+    minimized_afd = minimize_afd(afd)
+    print(f"Minimized AFD Transitions:")
+    for state, transitions in minimized_afd['transitions'].items():
+        print(f"State: {state} -> Transitions: {transitions}")
+    print(f"Minimized AFD Accepted States: {minimized_afd['accepted']}")
+    generate_graph(minimized_afd, "Minimized_AFD", folder)
+    write_automaton_to_json(minimized_afd, os.path.join(folder, "minimized_afd.json"))
+
+    # Paso 5: Simular la cadena de entrada
+    current_state = next(iter(minimized_afd['transitions'].keys()))  # Estado inicial
+    print(f"Initial state: {current_state}")
+
+    start_time = time.time()  # Comienza a medir el tiempo
+
+    for char in test_string:
+        print(f"Processing character: {char}")
+        if char in minimized_afd['transitions'][current_state]:
+            next_state = minimized_afd['transitions'][current_state][char]
+            print(f"Transition from {current_state} to {next_state} on '{char}'")
+            current_state = next_state
+        else:
+            print(f"No transition from {current_state} on '{char}'")
+            print(f"String '{test_string}' is not accepted.")
+            end_time = time.time()  # Finaliza el tiempo de verificación
+            elapsed_time = end_time - start_time
+            print(f"Verification time: {elapsed_time} seconds")
+            return False
+
+    # Verificar si el estado final es un estado aceptado
+    if current_state in minimized_afd['accepted']:
+        print(f"String '{test_string}' is accepted.")
+    else:
+        print(f"Final state: {current_state} is not an accepted state.")
+        print(f"String '{test_string}' is not accepted.")
+
+    end_time = time.time()  # Finaliza el tiempo de verificación
+    elapsed_time = end_time - start_time
+    print(f"Verification time: {elapsed_time} seconds")
+
+# Simulación de ejemplo con entrada desde la terminal
 if __name__ == "__main__":
-    main()
+    infix_expr = input("Ingrese la expresión regular en infix: ")  # Solicitar la expresión regular en infix
+    test_str = input("Ingrese la cadena a probar: ")  # Solicitar la cadena de prueba
+
+    simulate_regexp_process(infix_expr, test_str)
