@@ -34,7 +34,9 @@
     devShells = forAllSystems {
       function = {pkgs, ...}: {
         default = pkgs.mkShell {
-          packages = with pkgs; [python3 black];
+          packages = let
+            python3 = pkgs.python3.withPackages (python-pkgs: with python-pkgs; [graphviz colorama]);
+          in [python3 pkgs.black];
         };
       };
     };
