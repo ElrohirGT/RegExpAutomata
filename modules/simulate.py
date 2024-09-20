@@ -23,22 +23,33 @@ def generate_graph(automaton, name, folder):
                 for next_state in next_states:
                     next_state_label = str(next_state)
                     dot.edge(state_label, next_state_label, label=input_char)
+
+        # En el caso del AFN, los estados aceptados están numerados por su índice
+        accepted_states = automaton['accepted'] if isinstance(automaton['accepted'], (list, set)) else [automaton['accepted']]
+        for accepted_state in accepted_states:
+            accepted_label = str(accepted_state)
+            dot.node(accepted_label, shape='doublecircle')
+
     else:  # Para AFD o AFD minimizado (diccionario de transiciones)
+        # Creamos el state_mapping para los estados minimizados
+        state_mapping = {state: f"q{idx}" for idx, state in enumerate(automaton['transitions'].keys())}
+        
         for state, transitions in automaton['transitions'].items():
-            state_label = ",".join(map(str, state))
+            state_label = state_mapping[state]
             for input_char, next_state in transitions.items():
-                next_state_label = ",".join(map(str, next_state))
+                next_state_label = state_mapping[next_state]
                 dot.edge(state_label, next_state_label, label=input_char)
 
-    accepted_states = automaton['accepted'] if isinstance(automaton['accepted'], (list, set)) else [automaton['accepted']]
-
-    for accepted_state in accepted_states:
-        accepted_label = ",".join(map(str, accepted_state)) if isinstance(accepted_state, frozenset) else str(accepted_state)
-        dot.node(accepted_label, shape='doublecircle')
+        # Para los estados aceptados en el AFD minimizado
+        accepted_states = automaton['accepted'] if isinstance(automaton['accepted'], (list, set)) else [automaton['accepted']]
+        for accepted_state in accepted_states:
+            accepted_label = state_mapping[accepted_state]
+            dot.node(accepted_label, shape='doublecircle')
 
     output_path = os.path.join(folder, f"{name}.gv")
     dot.render(output_path, format="png")
     print(f"{Fore.GREEN}Generated {name} graph at {output_path}.png")
+
 
 def write_automaton_to_json(automaton, filename):
     if isinstance(automaton['transitions'], list):
